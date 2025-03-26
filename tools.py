@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import Optional
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
+from typing import Dict, Any
+import random
 
 load_dotenv()
 
@@ -33,19 +35,21 @@ async def verify_user(phone: str):
 def guardar_meta(config: RunnableConfig, meta: str):
     """Guarda la meta de ahorro del usuario."""
     user_id = config["configurable"].get("thread_id")
-    print(user_id)
-    print(meta)
+    #print(user_id)
+    #print(meta)
     if not user_id:
         raise ValueError("ID de usuario no encontrado en la configuración.")
 
     conn = psycopg.connect(DATABASE_URL)
+    #print("✅ Conexión exitosa", conn)
+
     with conn.cursor() as cursor:
         query = """INSERT INTO ahorros (usuario_id, meta, ingreso_mensual, ahorro_sugerido, ahorro_confirmado)
                    VALUES (%s, %s, 0, 0, 0)"""
         cursor.execute(query, (user_id, meta))
         inserted_id = cursor.fetchone()[0]
-    print('insertar:',inserted_id)
-    print('cursor:',cursor)
+    #print('insertar:',inserted_id)
+    #print('cursor:',cursor)
     conn.commit()
     conn.close()
     if inserted_id:
@@ -61,7 +65,7 @@ def registrar_ingreso(config: RunnableConfig, ingreso: float):
     if not user_id:
         raise ValueError("ID de usuario no encontrado en la configuración.")
 
-    print(user_id)
+    #print(user_id)
     # Regla simple: ahorrar el 5% del ingreso como sugerencia
     ahorro_sugerido = round(ingreso * 0.05, 2)
 
@@ -115,3 +119,77 @@ def confirmar_ahorro(config: RunnableConfig):
         return f"¡Ahorro confirmado! Este mes apartaste S/.{ahorro_confirmado} para tu meta. ¡Sigue así! 🚀"
     return "No se pudo registrar tu ahorro. Problemas técnicos"
 
+@tool
+def analizar_patrones_financieros(meta: float, meses: int) -> Dict[str, Any]:
+    """
+    Analiza patrones financieros con una estrategia más realista y motivadora.
+    """
+    # Simulación de ingresos más estables y realistas
+    ingresos_base = random.randint(2000, 3500)  # Ingreso mensual base más realista
+    egresos_base = random.randint(1500, 2500)   # Egresos base
+
+    def calcular_ahorro_mes(mes):
+        """
+        Calcula el ahorro con variaciones más realistas.
+        Introduce ligeras variaciones en ingresos y egresos.
+        """
+        variacion_ingreso = random.uniform(0.9, 1.1)  # ±10% de variación
+        variacion_egreso = random.uniform(0.9, 1.1)   # ±10% de variación
+        
+        ingreso_mes = ingresos_base * variacion_ingreso
+        egreso_mes = egresos_base * variacion_egreso
+        
+        saldo_disponible = max(ingreso_mes - egreso_mes, 0)
+        
+        # Estrategias de ahorro progresivas
+        if saldo_disponible <= 500:
+            porcentaje_ahorro = 0.03  # Ahorro mínimo conservador
+        elif saldo_disponible <= 1000:
+            porcentaje_ahorro = 0.06  # Ahorro moderado
+        else:
+            porcentaje_ahorro = 0.10  # Ahorro más agresivo
+        
+        ahorro_mes = round(saldo_disponible * porcentaje_ahorro, 2)
+        
+        return {
+            'ingreso': round(ingreso_mes, 2),
+            'egreso': round(egreso_mes, 2),
+            'ahorro': max(ahorro_mes, 0),  # Nunca menor a cero
+            'saldo_disponible': round(saldo_disponible, 2)
+        }
+
+    # Generar plan de ahorro
+    plan_ahorro = []
+    ahorros_mensuales = []
+    ingresos_detalle = []
+    egresos_detalle = []
+
+    for i in range(6):
+        detalle_mes = calcular_ahorro_mes(i+1)
+        plan_ahorro.append(f"Mes {i+1}: {detalle_mes['ahorro']} soles")
+        ahorros_mensuales.append(detalle_mes['ahorro'])
+        ingresos_detalle.append(detalle_mes['ingreso'])
+        egresos_detalle.append(detalle_mes['egreso'])
+
+    # Cálculos finales
+    ahorro_promedio = max(sum(ahorros_mensuales) / len(ahorros_mensuales), 0)
+    meses_necesarios = round(meta / ahorro_promedio) if ahorro_promedio > 0 else "Indefinido"
+
+    # Mensaje motivacional adaptativo
+    if ahorro_promedio == 0:
+        mensaje_motivacional = "Parece que necesitamos revisar tu presupuesto. ¡Juntas podemos encontrar formas de ahorrar!"
+    elif meses_necesarios <= 24:
+        mensaje_motivacional = f"¡Excelente! Con este plan, podrías alcanzar tu meta de {meta} soles en aproximadamente {meses_necesarios} meses. ¡Sigue así!"
+    elif meses_necesarios <= 36:
+        mensaje_motivacional = f"Tu meta está a {meses_necesarios} meses. Recuerda, cada sol ahorrado te acerca más a tu sueño del carro. ¡Tú puedes lograrlo!"
+    else:
+        mensaje_motivacional = f"El camino es largo, pero no imposible. En aproximadamente {meses_necesarios} meses podrías alcanzar tu meta. ¡La constancia es clave!"
+
+    return {
+        "ingresos": ingresos_detalle,
+        "egresos": egresos_detalle,
+        "plan_ahorro": plan_ahorro,
+        "ahorro_promedio_mensual": round(ahorro_promedio, 2),
+        "meses_necesarios": meses_necesarios,
+        "mensaje": mensaje_motivacional
+    }
