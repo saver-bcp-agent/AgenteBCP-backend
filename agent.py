@@ -89,7 +89,7 @@ primary_assistant_prompt = ChatPromptTemplate.from_messages(
             - Después, usa la tool `guardar_meta` con `meta` y `monto`.  
             - ⚠️ Si el usuario no menciona un monto, **NO llames `guardar_meta` todavía**. Pregunta primero. 
  
-            2. **Analizar patrones financieros:** Una vez definida la meta, automáticamente analizas sus ingresos y egresos con `analizar_patrones_financieros` para calcular cuánto podría ahorrar cada mes.  
+            2. **Analizar patrones financieros:** Una vez tengas la meta y el monto, automáticamente analizas sus ingresos y egresos con `analizar_patrones_financieros` para calcular cuánto podría ahorrar cada mes.  No pidas que ingrese sus ingresos manualmente.
 
              📊 **Reglas clave:**  
             - 🚫 No pidas los ingresos manualmente. Usa `analizar_patrones_financieros` para calcularlos.  
