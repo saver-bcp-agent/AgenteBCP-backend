@@ -32,29 +32,27 @@ async def verify_user(phone: str):
 ########################### Tools ###########################
 
 @tool
-def guardar_meta(config: RunnableConfig, meta: str):
-    """Guarda la meta de ahorro del usuario."""
+def guardar_meta(config: RunnableConfig, meta: str, monto: float):
+    """Guarda la meta de ahorro del usuario con el monto especificado."""
     user_id = config["configurable"].get("thread_id")
-    #print(user_id)
-    #print(meta)
+    
     if not user_id:
         raise ValueError("ID de usuario no encontrado en la configuración.")
 
-    conn = psycopg.connect(DATABASE_URL)
-    #print("✅ Conexión exitosa", conn)
+    try:
+        with psycopg.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cursor:
+                query = """INSERT INTO ahorros (usuario_id, meta, total_meta, total_actual)
+                           VALUES (%s, %s, %s, 0) RETURNING id"""
+                cursor.execute(query, (user_id, meta, monto))
+                inserted_id = cursor.fetchone()[0]
 
-    with conn.cursor() as cursor:
-        query = """INSERT INTO ahorros (usuario_id, meta, ingreso_mensual, ahorro_sugerido, ahorro_confirmado)
-                   VALUES (%s, %s, 0, 0, 0)"""
-        cursor.execute(query, (user_id, meta))
-        inserted_id = cursor.fetchone()[0]
-    #print('insertar:',inserted_id)
-    #print('cursor:',cursor)
-    conn.commit()
-    conn.close()
-    if inserted_id:
-        return "¡Meta guardada! Ahora registra tu ingreso mensual. 💰"
-    return "No se pudo guardar tu meta. Problemas técnicos."
+            conn.commit()
+        
+        return f"¡Meta guardada con éxito! ID: {inserted_id}. Ahora registra tu ingreso mensual. 💰"
+    
+    except Exception as e:
+        return f"❌ Error al guardar la meta: {str(e)}"
 
 
 
