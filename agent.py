@@ -91,8 +91,19 @@ primary_assistant_prompt = ChatPromptTemplate.from_messages(
  
             2. **Analizar patrones financieros:** Una vez tengas la meta y el monto, automáticamente analizas sus ingresos y egresos con `analizar_patrones_financieros` para calcular cuánto podría ahorrar cada mes.  No pidas que ingrese sus ingresos manualmente.
 
+            3. Finalmente, pregúntale cuál plan le gusta más y dile que se ha guardado su meta de ahorro.
+
              📊 **Reglas clave:**  
-            - 🚫 No pidas los ingresos manualmente. Usa `analizar_patrones_financieros` para calcularlos.  
+            - 🚫 **Nunca pidas los ingresos manualmente**. Usa directamente `analizar_patrones_financieros` para obtenerlos.  
+            - Si el usuario menciona ingresos, ignóralo y usa `analizar_patrones_financieros`.  
+            - Cuando expliques los resultados, di que se basan en el análisis automático de sus ingresos y egresos.  
+
+            ❌ **Ejemplo INCORRECTO (lo que NO debes hacer):**  
+            👩‍💼 "¿Cuál fue tu ingreso total del último mes?" ← ❌ ¡Esto está mal! Nunca pidas ingresos manualmente.  
+
+            ✅ **Ejemplo CORRECTO (lo que debes hacer):**  
+            👩‍💼 "Voy a analizar automáticamente tus ingresos y egresos. Un momento..." *(Llama a `analizar_patrones_financieros`)*  
+  
             - Explica cada paso de manera simple, sin tecnicismos.  
             - Usa ejemplos relacionados con la realidad de una emprendedora peruana.  
             - Siempre al principio preguntas al usuario para qué quiere ahorrar.  

@@ -120,74 +120,98 @@ def confirmar_ahorro(config: RunnableConfig):
 @tool
 def analizar_patrones_financieros(meta: float, meses: int) -> Dict[str, Any]:
     """
-    Analiza patrones financieros con una estrategia más realista y motivadora.
+    Analiza patrones financieros con estrategias de aceleración de ahorro.
     """
-    # Simulación de ingresos más estables y realistas
-    ingresos_base = random.randint(2000, 3500)  # Ingreso mensual base más realista
-    egresos_base = random.randint(1500, 2500)   # Egresos base
+    # Simulación de ingresos base
+    ingresos_base = random.randint(2000, 3500)
+    egresos_base = random.randint(1500, 2500)
 
-    def calcular_ahorro_mes(mes):
+    def calcular_ahorro_mes(mes, porcentaje_ahorro):
         """
-        Calcula el ahorro con variaciones más realistas.
-        Introduce ligeras variaciones en ingresos y egresos.
+        Calcula el ahorro con variaciones realistas y porcentaje personalizado.
         """
-        variacion_ingreso = random.uniform(0.9, 1.1)  # ±10% de variación
-        variacion_egreso = random.uniform(0.9, 1.1)   # ±10% de variación
+        variacion_ingreso = random.uniform(0.9, 1.1)
+        variacion_egreso = random.uniform(0.9, 1.1)
         
         ingreso_mes = ingresos_base * variacion_ingreso
         egreso_mes = egresos_base * variacion_egreso
         
         saldo_disponible = max(ingreso_mes - egreso_mes, 0)
         
-        # Estrategias de ahorro progresivas
-        if saldo_disponible <= 500:
-            porcentaje_ahorro = 0.03  # Ahorro mínimo conservador
-        elif saldo_disponible <= 1000:
-            porcentaje_ahorro = 0.06  # Ahorro moderado
-        else:
-            porcentaje_ahorro = 0.10  # Ahorro más agresivo
-        
         ahorro_mes = round(saldo_disponible * porcentaje_ahorro, 2)
         
         return {
             'ingreso': round(ingreso_mes, 2),
             'egreso': round(egreso_mes, 2),
-            'ahorro': max(ahorro_mes, 0),  # Nunca menor a cero
+            'ahorro': max(ahorro_mes, 0),
             'saldo_disponible': round(saldo_disponible, 2)
         }
 
-    # Generar plan de ahorro
-    plan_ahorro = []
-    ahorros_mensuales = []
-    ingresos_detalle = []
-    egresos_detalle = []
+    # Calcular planes de ahorro con diferentes porcentajes
+    planes = {
+        'plan_base': {
+            'porcentaje': 0.05,
+            'ahorros': [],
+            'ingresos': [],
+            'egresos': []
+        },
+        'plan_intermedio': {
+            'porcentaje': 0.10,
+            'ahorros': [],
+            'ingresos': [],
+            'egresos': []
+        },
+        'plan_agresivo': {
+            'porcentaje': 0.15,
+            'ahorros': [],
+            'ingresos': [],
+            'egresos': []
+        }
+    }
 
-    for i in range(6):
-        detalle_mes = calcular_ahorro_mes(i+1)
-        plan_ahorro.append(f"Mes {i+1}: {detalle_mes['ahorro']} soles")
-        ahorros_mensuales.append(detalle_mes['ahorro'])
-        ingresos_detalle.append(detalle_mes['ingreso'])
-        egresos_detalle.append(detalle_mes['egreso'])
+    # Generar planes de ahorro
+    for nombre_plan, plan in planes.items():
+        for i in range(6):
+            detalle_mes = calcular_ahorro_mes(i+1, plan['porcentaje'])
+            plan['ahorros'].append(detalle_mes['ahorro'])
+            plan['ingresos'].append(detalle_mes['ingreso'])
+            plan['egresos'].append(detalle_mes['egreso'])
 
-    # Cálculos finales
-    ahorro_promedio = max(sum(ahorros_mensuales) / len(ahorros_mensuales), 0)
-    meses_necesarios = round(meta / ahorro_promedio) if ahorro_promedio > 0 else "Indefinido"
+    # Calcular detalles para cada plan
+    resultados = {}
+    for nombre_plan, plan in planes.items():
+        ahorro_promedio = max(sum(plan['ahorros']) / len(plan['ahorros']), 0)
+        meses_necesarios = round(meta / ahorro_promedio) if ahorro_promedio > 0 else "Indefinido"
+        
+        resultados[nombre_plan] = {
+            'ahorro_promedio_mensual': round(ahorro_promedio, 2),
+            'meses_necesarios': meses_necesarios,
+            'plan_ahorro': [f"Mes {i+1}: {ahorro} soles" for i, ahorro in enumerate(plan['ahorros'])]
+        }
 
-    # Mensaje motivacional adaptativo
-    if ahorro_promedio == 0:
-        mensaje_motivacional = "Parece que necesitamos revisar tu presupuesto. ¡Juntas podemos encontrar formas de ahorrar!"
-    elif meses_necesarios <= 24:
-        mensaje_motivacional = f"¡Excelente! Con este plan, podrías alcanzar tu meta de {meta} soles en aproximadamente {meses_necesarios} meses. ¡Sigue así!"
-    elif meses_necesarios <= 36:
-        mensaje_motivacional = f"Tu meta está a {meses_necesarios} meses. Recuerda, cada sol ahorrado te acerca más a tu sueño del carro. ¡Tú puedes lograrlo!"
-    else:
-        mensaje_motivacional = f"El camino es largo, pero no imposible. En aproximadamente {meses_necesarios} meses podrías alcanzar tu meta. ¡La constancia es clave!"
+    # Generar mensaje motivacional con sugerencias
+    def generar_mensaje_motivacional(planes):
+        base = resultados['plan_base']
+        intermedio = resultados['plan_intermedio']
+        agresivo = resultados['plan_agresivo']
+
+        mensaje = f"Con tu plan actual, tardarías aproximadamente {base['meses_necesarios']} meses en alcanzar tu meta de {meta} soles.\n\n"
+        
+        mensaje += "🚀 Alternativas para acelerar tu ahorro:\n"
+        
+        if intermedio['meses_necesarios'] != "Indefinido":
+            reduccion_intermedio = base['meses_necesarios'] - intermedio['meses_necesarios']
+            mensaje += f"- Si ahorras un 10% de tu ingreso disponible, podrías reducir {reduccion_intermedio} meses, alcanzando tu meta en {intermedio['meses_necesarios']} meses.\n"
+        
+        if agresivo['meses_necesarios'] != "Indefinido":
+            reduccion_agresivo = base['meses_necesarios'] - agresivo['meses_necesarios']
+            mensaje += f"- Si incrementas tu ahorro al 15%, podrías reducir {reduccion_agresivo} meses, alcanzando tu meta en {agresivo['meses_necesarios']} meses.\n"
+        
+        mensaje += "\n💡 Recuerda: Cada sol que ahorres te acerca más a tu sueño. ¡Tú decides el ritmo!"
+        
+        return mensaje
 
     return {
-        "ingresos": ingresos_detalle,
-        "egresos": egresos_detalle,
-        "plan_ahorro": plan_ahorro,
-        "ahorro_promedio_mensual": round(ahorro_promedio, 2),
-        "meses_necesarios": meses_necesarios,
-        "mensaje": mensaje_motivacional
+        "planes": resultados,
+        "mensaje_motivacional": generar_mensaje_motivacional(resultados)
     }
